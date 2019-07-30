@@ -6,56 +6,60 @@
 /*   By: mnzolo <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/06/27 15:57:48 by mnzolo            #+#    #+#             */
-/*   Updated: 2019/07/04 13:29:51 by mnzolo           ###   ########.fr       */
+/*   Updated: 2019/07/30 09:43:54 by mnzolo           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "get_next_line.h"
+#include <stdio.h>
 
-static int	count(char	*tmp)
+static	int	count(char **tmp, char **line)
 {
-	int i2;
+	int		i2;
+	char	*new;
 
 	i2 = 0;
-	while (tmp[i2] != '\n' && tmp[i2] != '\0')
+	while ((*tmp)[i2] != '\n' && (*tmp)[i2] != '\0')
 		i2++;
-	return(i2);
-}
-static char *remove(char *tmp)
-{
-	if (tmp[count(tmp)] == '\n' || tmp[count(tmp)] == '\0')
-		ft_strcpy(tmp, tmp + count(tmp) + 1);
-	return (tmp);
+	if ((*tmp)[i2] == '\n')
+	{
+		*line = ft_strsub(*tmp, 0, i2);
+		new = ft_strdup(*tmp + i2 + 1);
+		free(*tmp);
+		*tmp = new;
+	}
+	else
+	{
+		*line = ft_strdup(*tmp);
+		ft_strdel(tmp);
+	}
+	return (1);
 }
 
-int		get_next_line(const int fd, char **line)
+int			get_next_line(const int fd, char **line)
 {
 	char			*buf;
 	static char		*tmp;
 	int				rd;
-	int				i;
-	char 			*som;
+	char			*som;
 
 	rd = 0;
-	i =	0;
-	buf = ft_strnew(BUFF_SIZE);
-	if (BUFF_SIZE == 0)
-		return (0);
 	if (tmp == NULL)
 		tmp = ft_strnew(0);
+	buf = ft_strnew(BUFF_SIZE);
+	if (read(fd, buf, 0) < 0 || !line || fd < 0)
+		return (-1);
 	while ((rd = read(fd, buf, BUFF_SIZE)) > 0)
 	{
 		buf[rd] = '\0';
 		som = ft_strjoin(tmp, buf);
 		free(tmp);
-		tmp = ft_strdup(som);
-		free(som);
+		tmp = som;
+		if (ft_strchr(tmp, '\n'))
+			break ;
 	}
-	i = count(tmp);
-	*line = ft_strsub(tmp, 0, i);
-	tmp = remove(tmp);
-	return (1);
-	if (read(fd, buf, BUFF_SIZE) < 0 || fd < 0)
-		return (-1);
-	return (0);
+	free(buf);
+	if (rd == 0 && (tmp == NULL || tmp[0] == '\0'))
+		return (0);
+	return (count(&tmp, line));
 }
